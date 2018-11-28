@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Is Cataclysm DDA 0.D released already?</title>
+  <style>
+    html {
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      text-align: center;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+    }
+
+    .modal {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      left: 50%;
+      top: 50%;
+      transform: translateX(-50%) translateY(-50%);
+      border: 1px solid black;
+      box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+      background-color: whitesmoke;
+      padding: 10px;
+    }
+  </style>
+  <script type="text/javascript"> var appInsights=window.appInsights||function(a){ function b(a){c[a]=function(){var b=arguments;c.queue.push(function(){c[a].apply(c,b)})}}var c={config:a},d=document,e=window;setTimeout(function(){var b=d.createElement("script");b.src=a.url||"https://az416426.vo.msecnd.net/scripts/a/ai.0.js",d.getElementsByTagName("script")[0].parentNode.appendChild(b)});try{c.cookie=d.cookie}catch(a){}c.queue=[];for(var f=["Event","Exception","Metric","PageView","Trace","Dependency"];f.length;)b("track"+f.pop());if(b("setAuthenticatedUserContext"),b("clearAuthenticatedUserContext"),b("startTrackEvent"),b("stopTrackEvent"),b("startTrackPage"),b("stopTrackPage"),b("flush"),!a.disableExceptionTracking){f="onerror",b("_"+f);var g=e[f];e[f]=function(a,b,d,e,h){var i=g&&g(a,b,d,e,h);return!0!==i&&c["_"+f](a,b,d,e,h),i}}return c }({ instrumentationKey:"f3eea158-914e-46a5-8cc2-4a1af4312f97" }); window.appInsights=appInsights,appInsights.queue&&0===appInsights.queue.length&&appInsights.trackPageView(); </script>
+  <script src="octokat.js"></script>
+</head>
+<body>
+  <div style="font-size: 2rem">Is 0.D released yet?</div>
+  <div id="are-we-there-yet" style="font-size: 10rem">Lemme check for you...</div>
+  <div id="commit-count" style="font-size: 2rem; margin-top: 0.5rem"></div>
+
+  <a href="javascript:" style="position: fixed; bottom: .5rem" onclick="showWatchModal()">Notify me maybe?</a>
+
+  <div id="modal" style="position: fixed; width: 100%; height: 100%; display: none" onclick="hideWatchModal()">
+    <div class="modal">
+      <img src="github.png" style="align-self: center">
+      <div style="margin-top: 1rem; font-size: 1.5rem">
+        GitHub now allows to subscribe to releases only
+      </div>
+      <a href="https://github.com/CleverRaven/Cataclysm-DDA" style="margin-top: 0.2rem">
+        Oh gosh, is this a thing already?
+      </a>
+    </div>
+  </div>
+
+  <a href="https://github.com/Razenpok" style="position: fixed; right: 10px; bottom: 10px">
+    <img src="razen.png" width="50" height="50">
+  </a>
+<script>
+  const REFRESH_RATE = 10 * 60 * 1000;
+  function updateLabel() {
+    document.getElementById("are-we-there-yet").textContent = data.label;
+  }
+  function updateCommitCount() {
+    document.getElementById("commit-count").textContent = data.error ? "" :`${data.commits} commits to master since 0.C`;
+  }
+  function setError() {
+    data.error = true;
+    data.label = "Looks like GitHub is messing with API";
+    updateLabel();
+  }
+  function setReleased() {
+    data.error = false;
+    data.label = "Yep, it's out!";
+    updateLabel();
+  }
+  function setNotReleased() {
+    data.error = false;
+    data.label = "Nope, not yet";
+    updateLabel();
+  }
+  function saveData() {
+    localStorage.setItem("data", JSON.stringify(data));
+  }
+  let data = {
+    error: false,
+    label: "",
+    commits: 0,
+    lastCheck: 0
+  };
+  let savedData = localStorage.getItem("data");
+  if (savedData) {
+    data = JSON.parse(savedData);
+  }
+  if (Date.now() - data.lastCheck < REFRESH_RATE) {
+    updateLabel();
+    updateCommitCount();
+  }
+  else {
+    data.lastCheck = Date.now();
+    loadFreshData();
+  }
+  setInterval(loadFreshData, REFRESH_RATE);
+
+  function loadFreshData() {
+    loadFreshDataAsync().catch(r => {
+      setError();
+      saveData();
+    });
+  }
+
+  async function loadFreshDataAsync() {
+    const octo = new Octokat();
+    const repo = octo.repos("CleverRaven", "Cataclysm-DDA");
+    let response = await repo.releases.fetch();
+    const releases = response.items;
+    if (releases.some(release => release.tag_name === "0.D")) {
+      setReleased();
+    } else {
+      setNotReleased();
+    }
+    response = await repo.commits.fetch();
+    const lastPageUrlParts = response.lastPageUrl.split("=");
+    const pageCount = parseInt(lastPageUrlParts[lastPageUrlParts.length - 1]);
+    let totalCommitCount = (pageCount - 1) * response.items.length;
+    response = await response.lastPage.fetch();
+    totalCommitCount += response.items.length;
+    const lastReleaseCommitCount = 27786;
+    data.commits = totalCommitCount - lastReleaseCommitCount;
+    updateCommitCount();
+    saveData();
+  }
+
+  const modal = document.getElementById("modal");
+  function showWatchModal() {
+    modal.style.display = "block";
+  }
+
+  function hideWatchModal() {
+    modal.style.display = "none";
+  }
+</script>
+</body>
+</html>
