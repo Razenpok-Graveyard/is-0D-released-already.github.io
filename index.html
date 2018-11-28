@@ -36,9 +36,19 @@
   <script src="octokat.js"></script>
 </head>
 <body>
-  <div style="font-size: 2rem">Is 0.D released yet?</div>
+  <div style="font-size: 2rem">
+    Is
+    <a href="https://cataclysmdda.org/" style="text-decoration: none">Cataclysm DDA</a>
+    0.D released yet?
+  </div>
   <div id="are-we-there-yet" style="font-size: 10rem">Lemme check for you...</div>
-  <div id="commit-count" style="font-size: 2rem; margin-top: 0.5rem"></div>
+  <div id="commit-count-hold-on" style="font-size: 2rem; margin-top: 0.5rem; display: none">Hold on, there's more...</div>
+  <div id="commit-count-label" style="font-size: 2rem; margin-top: 0.5rem; display: none">
+    <span id="commit-count"></span>
+    commits to 
+    <a href="https://github.com/CleverRaven/Cataclysm-DDA" style="text-decoration: none">master</a>
+    since 0.C
+  </div>
 
   <a href="javascript:" style="position: fixed; bottom: .5rem" onclick="showWatchModal()">Notify me maybe?</a>
 
@@ -54,8 +64,8 @@
     </div>
   </div>
 
-  <a href="https://github.com/Razenpok" style="position: fixed; right: 10px; bottom: 10px">
-    <img src="razen.png" width="50" height="50">
+  <a href="https://github.com/is-0D-released-already/is-0D-released-already.github.io" style="position: fixed; right: 10px; bottom: 10px">
+    <img src="mark-github.svg" width="50" height="50">
   </a>
 <script>
   const REFRESH_RATE = 10 * 60 * 1000;
@@ -63,7 +73,9 @@
     document.getElementById("are-we-there-yet").textContent = data.label;
   }
   function updateCommitCount() {
-    document.getElementById("commit-count").textContent = data.error ? "" :`${data.commits} commits to master since 0.C`;
+    document.getElementById("commit-count-hold-on").style.display = "none";
+    document.getElementById("commit-count-label").style.display = data.error ? "none" : "block";
+    document.getElementById("commit-count").textContent = data.commits;
   }
   function setError() {
     data.error = true;
@@ -106,6 +118,7 @@
   function loadFreshData() {
     loadFreshDataAsync().catch(r => {
       setError();
+      updateCommitCount();
       saveData();
     });
   }
@@ -120,6 +133,7 @@
     } else {
       setNotReleased();
     }
+    document.getElementById("commit-count-hold-on").style.display = "block";
     response = await repo.commits.fetch();
     const lastPageUrlParts = response.lastPageUrl.split("=");
     const pageCount = parseInt(lastPageUrlParts[lastPageUrlParts.length - 1]);
