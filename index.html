@@ -44,6 +44,7 @@
   <div id="are-we-there-yet" style="font-size: 10rem">Lemme check for you...</div>
   <div id="commit-count-hold-on" style="font-size: 2rem; margin-top: 0.5rem; display: none">Hold on, there's more...</div>
   <div id="commit-count-label" style="font-size: 2rem; margin-top: 0.5rem; display: none">
+    <span id="time-since-0C"></span> and
     <span id="commit-count"></span>
     commits to 
     <a href="https://github.com/CleverRaven/Cataclysm-DDA" style="text-decoration: none">master</a>
@@ -68,11 +69,24 @@
     <img src="mark-github.svg" width="50" height="50">
   </a>
 <script>
-  const REFRESH_RATE = 10 * 60 * 1000;
+  const SECOND = 1000;
+  const MINUTE = 60 * SECOND;
+  const HOUR = 60 * MINUTE;
+  const DAY = 24 * HOUR;
+  const REFRESH_RATE = 10 * MINUTE;
   function updateLabel() {
     document.getElementById("are-we-there-yet").textContent = data.label;
   }
   function updateCommitCount() {
+    const lastReleaseDate = new Date(2015, 3, 9, 0, 0, 0, 0).getTime();
+    const totalDays = Math.floor((Date.now() - lastReleaseDate) / DAY);
+    const years = Math.floor(totalDays / 365);
+    const days = totalDays - years * 365;
+    let timeSince0C = `${years} years`;
+    if (days > 0) {
+      timeSince0C += `, ${days} days`;
+    }
+    document.getElementById("time-since-0C").textContent = timeSince0C;
     document.getElementById("commit-count-hold-on").style.display = "none";
     document.getElementById("commit-count-label").style.display = data.error ? "none" : "block";
     document.getElementById("commit-count").textContent = data.commits;
@@ -133,6 +147,7 @@
     } else {
       setNotReleased();
     }
+
     document.getElementById("commit-count-hold-on").style.display = "block";
     response = await repo.commits.fetch();
     const lastPageUrlParts = response.lastPageUrl.split("=");
