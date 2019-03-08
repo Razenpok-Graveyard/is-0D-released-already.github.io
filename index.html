@@ -142,7 +142,7 @@
     const repo = octo.repos("CleverRaven", "Cataclysm-DDA");
     let response = await repo.releases.fetch();
     const releases = response.items;
-    if (releases.some(release => release.tag_name === "0.D")) {
+    if (releases.some(release => release.tagName === "0.D")) {
       setReleased();
     } else {
       setNotReleased();
